@@ -18,9 +18,14 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $fillable = [
-        'name',
-        'email',
-        'password',
+        'firstname',   // User's first name
+        'lastname',    // User's last name
+        'email',       // Email address
+        'password',    // Hashed password
+        'bdate',       // Birth date
+        'carbeffect',  // Custom field (e.g., carbohydrate effect)
+        'insuline',    // Custom field (e.g., insulin levels or preferences)
+        'roleid',      // Role ID (e.g., user role or type)
     ];
 
     /**
@@ -43,6 +48,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'bdate' => 'date',
         ];
     }
 }
