@@ -2,16 +2,63 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Models\User;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 
-Route::get('/user', function (Request $request) {
-    return $request->user();
-})->middleware('auth:sanctum');
+
+
+// Route to login user based on the request
+Route::post('/users/login', function (Request $request) {
+    $credentials = $request->only('email', 'password');
+    // dd($credentials);
+
+    // checks if the credentials are valid (hash check with Auth facade)
+    if (Auth::attempt($credentials)) {
+        // return a random string as token
+        return response()->json([
+            'token' => Str::random(80),
+            'email' => $request->email,
+            'firstname' => Auth::user()->firstname,
+            'lastname' => Auth::user()->lastname,
+            'carbeffect' => Auth::user()->carbeffect,
+            'insuline' => Auth::user()->insuline,
+            'created_at' => Auth::user()->created_at
+        ]);
+    }
+
+    // just return a 401 status code
+    return response()->json([
+        'message' => 'Unauthorized'
+    ], 401);
+});
+
+// Create a new user based on the request
+Route::post('/users/register', function (Request $request) {
+
+    $user = User::create([
+        'firstname' => $request->firstname,
+        'lastname' => $request->lastname,
+        'email' => $request->email,
+        'password' => Hash::make($request->password),
+        'bdate' => $request->bdate,
+        'carbeffect' => $request->carbeffect,
+        'insuline' => $request->insuline,
+        'roleid' => $request->roleid,
+        'created_at' => now(),
+        'updated_at' => now()
+    ]);
+
+    return response()->json($user, 201);
+});
 
 // Get all users
 Route::get('/users', function() {
-    $users = DB::select('SELECT * FROM users');
+    $users = DB::select('SELECT email,firstname,lastname,bdate,carbeffect,insuline,created_at,updated_at,password FROM users');
     return response()->json($users);
-});
+})->middleware('auth:sanctum');
+
 
 // Get a specific user by ID
 Route::get('/users/{id}', function($id){
@@ -20,22 +67,6 @@ Route::get('/users/{id}', function($id){
         return response()->json(['message' => 'User not found'], 404);
     }
     return response()->json($user[0]);
-});
-
-//create a new user
-Route::post('/users', function (\Illuminate\Http\Request $request) {
-    $email = $request->input('email');
-    $password = $request->input('password');
-    $firstname = $request->input('firstname');
-    $lastname = $request->input('lastname');
-    $bdate = $request->input('bdate');
-    $carbeffect = $request->input('carbeffect');
-    $insuline = $request->input('insuline');
-    $roleid = $request->input('roleid');
-
-    DB::insert('INSERT INTO users (email, password, firstname, lastname, bdate, carbeffect, insuline, roleid) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', [$email, $password, $firstname, $lastname, $bdate, $carbeffect, $insuline, $roleid]);
-
-    return response()->json(['message' => 'User created'], 201);
 });
 
 //Update a user
