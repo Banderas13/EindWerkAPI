@@ -19,6 +19,7 @@ Route::post('/users/login', function (Request $request) {
         // return a random string as token
         return response()->json([
             'token' => Str::random(80),
+            'id' => Auth::user()->id,
             'email' => $request->email,
             'firstname' => Auth::user()->firstname,
             'lastname' => Auth::user()->lastname,
@@ -69,29 +70,52 @@ Route::get('/users/{id}', function($id){
     return response()->json($user[0]);
 });
 
-//Update a user
-Route::patch('/users/{id}', function (\Illuminate\Http\Request $request, $id) {
-    //AI was used for this request
-    $fields = $request->only(['email', 'password', 'firstname', 'lastname', 'bdate','carbeffect','insuline','roleid']); // Get only provided fields
-    if (empty($fields)) {
-        return response()->json(['message' => 'No data provided for update'], 400); // No fields to update
+//Update a user (Ai Generated)
+Route::patch('/users/{id}', function (Request $request, $id) {
+    // Only allow specific fields to be updated
+    $fields = $request->only(['email', 'password', 'firstname', 'lastname', 'bdate', 'carbeffect', 'insuline', 'roleid']);
+    
+    // Validate input
+    $validator = Validator::make($fields, [
+        'email' => 'email',
+        'password' => 'string|min:6', // Password must be at least 6 characters
+        'firstname' => 'string|max:255',
+        'lastname' => 'string|max:255',
+        'bdate' => 'date',
+        'carbeffect' => 'integer|min:0',
+        'insuline' => 'integer|min:0',
+        'roleid' => 'integer|min:1',
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json(['errors' => $validator->errors()], 422);
     }
 
+    // Check if password is being updated and hash it
+    if (isset($fields['password'])) {
+        $fields['password'] = bcrypt($fields['password']);
+    }
+
+    // Generate the SET clause dynamically
     $setClause = [];
     $bindings = [];
     foreach ($fields as $key => $value) {
         $setClause[] = "$key = ?";
         $bindings[] = $value;
     }
-    $bindings[] = $id; // Add the ID to the bindings
+    $bindings[] = $id; // Add the ID for the WHERE clause
 
-    $query = 'UPDATE user SET ' . implode(', ', $setClause) . ' WHERE id = ?';
+    $query = 'UPDATE users SET ' . implode(', ', $setClause) . ' WHERE id = ?';
     $affected = DB::update($query, $bindings);
+
+    // Check if the user exists or no changes were made
     if ($affected === 0) {
-        return response()->json(['message' => 'user not found or no changes made'], 404);
+        return response()->json(['message' => 'User not found or no changes made'], 404);
     }
-    return response()->json(['message' => 'user updated successfully']);
+
+    return response()->json(['message' => 'User updated successfully']);
 });
+
 
 //Delete a user
 Route::delete('/users/{id}', function ($id) {
