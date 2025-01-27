@@ -419,7 +419,7 @@ Route::get('/courseingredients', function() {
 Route::get('/courseingredients/{id}', function($id) {
     $courseingredients = DB::select('SELECT * FROM courseingredients WHERE id = ?', [$id]);
     if (empty($courseingredients)) {
-        return response()->json(['message' => 'Courseingredient not found'], 404);
+        return response()->json(['message' => 'Courseingredient not found TESTSTSTSTSTEST'], 404);
     }
     return response()->json($courseingredients[0]);
 });
@@ -464,6 +464,12 @@ Route::delete('/courseingredients/{id}', function ($id) {
         return response()->json(['message' => 'Courseingredient not found'], 404);
     }
     return response()->json(['message' => 'Courseingredient deleted']);
+});
+
+// Join courseingredients on ingredients
+Route::get('/joinedingredients', function() {
+    $joinedTable = DB::select('SELECT courseingredients.id, courseingredients.courseid, ingredients.name, courseingredients.amount FROM courseingredients INNER JOIN ingredients ON courseingredients.ingredientid = ingredients.id');
+    return response()->json($joinedTable);
 });
 
 // Get all blogs
